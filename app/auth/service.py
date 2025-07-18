@@ -10,8 +10,12 @@ def register_user(db: Session, user: UserCreate) -> User:
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Username already exists")
 
+    if db.query(User).filter(User.email == user.email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+
     new_user = User(
         username=user.username,
+        email=user.email,
         hashed_password=hash_password(user.password)
     )
 
