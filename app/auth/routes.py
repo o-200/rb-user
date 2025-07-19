@@ -1,21 +1,23 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.schemas import UserCreate, UserLogin, Token
+from app.schemas import UserCreate, UserLogin, TokenResponse
 from app.auth.service import register_user, authenticate_user, invalidate_user, verify_token
 from app.auth.utils import get_token
 from app.db import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/register", response_model=Token)
+@router.post("/register", response_model=TokenResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     register_user(db, user)
     return authenticate_user(db, UserLogin(username=user.username, password=user.password))
 
-@router.post("/login", response_model=Token)
+
+@router.post("/login", response_model=TokenResponse)
 def login(credentials: UserLogin, db: Session = Depends(get_db)):
     return authenticate_user(db, credentials)
+
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(token: str = Depends(get_token), db: Session = Depends(get_db)):
@@ -25,3 +27,8 @@ def logout(token: str = Depends(get_token), db: Session = Depends(get_db)):
 @router.get("/verify", status_code=status.HTTP_200_OK)
 def verify(token: str = Depends(get_token), db: Session = Depends(get_db)):
     return verify_token(db, token)
+
+
+@router.post("/refresh", response_model=TokenResponse)
+def refresh(token: str = Depends(get_token), db: Session = Depends(get_db)):
+    return refresh_token(db, token)
